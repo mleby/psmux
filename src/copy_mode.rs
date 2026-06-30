@@ -130,7 +130,29 @@ pub fn switch_with_copy_save<F: FnOnce(&mut AppState)>(app: &mut AppState, switc
     if was_copy {
         save_copy_state_to_pane(app);
     }
+    // Send FocusOut to the currently active pane before switching.
+    let old_win_idx = app.active_idx;
+    let old_path = app.windows[old_win_idx].active_path.clone();
+    if app.focus_events {
+        let win = &mut app.windows[old_win_idx];
+        if let Some(p) = active_pane_mut(&mut win.root, &old_path) {
+            let _ = p.writer.write_all(b"\x1b[O");
+            let _ = p.writer.flush();
+        }
+    }
     switch_fn(app);
+    // Send FocusIn to the newly active pane if it changed.
+    if app.focus_events {
+        let new_win_idx = app.active_idx;
+        let new_path = app.windows[new_win_idx].active_path.clone();
+        if new_win_idx != old_win_idx || new_path != old_path {
+            let win = &mut app.windows[new_win_idx];
+            if let Some(p) = active_pane_mut(&mut win.root, &new_path) {
+                let _ = p.writer.write_all(b"\x1b[I");
+                let _ = p.writer.flush();
+            }
+        }
+    }
     // After switching, check if the new pane has copy state to restore.
     let win = &app.windows[app.active_idx];
     let new_pane_has_copy = active_pane(&win.root, &win.active_path)
