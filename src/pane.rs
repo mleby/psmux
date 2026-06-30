@@ -966,7 +966,7 @@ pub fn build_command(command: Option<&str>, env_shim: bool, allow_predictions: b
                     .and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
                 if stem == "pwsh" || stem == "powershell" {
                     builder.args(["-NoLogo", "-Command", &cmd]);
-                } else if matches!(stem.as_str(), "bash" | "sh" | "zsh" | "fish" | "dash" | "ash") {
+                } else if matches!(stem.as_str(), "bash" | "sh" | "zsh" | "fish" | "dash" | "ash" | "nu" | "nushell") {
                     builder.args(["-c", &cmd]);
                 } else {
                     builder.args(["/C", &cmd]);
