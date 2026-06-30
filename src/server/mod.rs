@@ -1647,6 +1647,7 @@ pub fn run_server(session_name: String, socket_name: Option<String>, initial_com
                     // ── Propagate OSC 0/2 titles to pane.title ──
                     if helpers::propagate_osc_titles(&mut app) {
                         state_dirty = true;
+                        meta_dirty = true;
                     }
 
                     // ── Automatic rename / allow-rename: resolve window names ──
@@ -4833,6 +4834,13 @@ pub fn run_server(session_name: String, socket_name: Option<String>, initial_com
         // echo, etc.).  This gives event-driven rendering like wezterm:
         // frames arrive within 1-5ms of ConPTY output instead of waiting
         // for the next client poll cycle (up to 50ms).
+        // Propagate OSC 0/2 titles before building the pushed frame so
+        // #{pane_title} in window-status-format always reflects the latest
+        // title set by child processes (fix: title was only propagated in
+        // the DumpState path, so pushed frames showed stale window tabs).
+        if helpers::propagate_osc_titles(&mut app) {
+            meta_dirty = true;
+        }
         if (state_dirty || meta_dirty) && crate::types::has_frame_receivers() {
             // Check bell/activity state for the pushed frame
             let push_alert_hooks = helpers::check_window_activity(&mut app);
